@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Translator — 讓每個人都能看懂 AI 在說什麼</title>
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --surface: #14141e;
+      --surface2: #1a1a2e;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #e8eaff;
+      --muted: rgba(200,210,255,0.45);
+      --accent: #5b6af0;
+      --accent-light: #a0aaff;
+      --accent-glow: rgba(91,106,240,0.22);
+      --green: #1a9b74;
+      --red: #d94f4f;
+      --purple: #8a6ef0;
+
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 300ms var(--ease-out), border-color 300ms var(--ease-out), backdrop-filter 300ms var(--ease-out);
+      border-bottom: 1px solid transparent;
+    }
+    nav.scrolled {
+      background: rgba(13,13,20,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-color: var(--border);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+    }
+    .nav-icon {
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-version {
+      font-size: 11px; font-weight: 500; color: var(--muted);
+      background: rgba(91,106,240,0.1); border: 1px solid rgba(91,106,240,0.2);
+      padding: 2px 8px; border-radius: 100px;
+    }
+
+    .nav-beta {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      color: #f59e0b; background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      padding: 2px 8px; border-radius: 100px; text-transform: uppercase;
+    }
+
+    .lang-btn {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+      color: var(--muted); background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border2); padding: 5px 14px;
+      border-radius: 100px; cursor: pointer; font-family: inherit;
+      transition: color 150ms, background 150ms, border-color 150ms;
+      flex-shrink: 0;
+    }
+    .lang-btn:hover {
+      color: var(--text); background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 148px 0 96px;
+      text-align: center;
+    }
+
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--accent-light);
+      background: rgba(91,106,240,0.1); border: 1px solid rgba(91,106,240,0.22);
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 28px;
+      opacity: 0; transform: scale(0.95) translateY(8px);
+      animation: fadeUp 500ms var(--ease-out) 80ms forwards;
+    }
+    .hero-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-light); }
+
+    h1.hero-title {
+      font-size: clamp(36px, 7vw, 60px);
+      font-weight: 800; letter-spacing: -0.035em; line-height: 1.08;
+      margin-bottom: 22px;
+      opacity: 0; transform: scale(0.97) translateY(12px);
+      animation: fadeUp 600ms var(--ease-out) 180ms forwards;
+    }
+    .hero-title .grad {
+      background: linear-gradient(130deg, #a0aaff 10%, #5b6af0 55%, #8a6ef0);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2.5vw, 19px); color: var(--muted);
+      max-width: 500px; margin: 0 auto 40px; letter-spacing: -0.01em; line-height: 1.65;
+      opacity: 0; transform: translateY(10px);
+      animation: fadeUp 600ms var(--ease-out) 270ms forwards;
+    }
+
+    .hero-actions {
+      display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+      opacity: 0; transform: translateY(10px);
+      animation: fadeUp 600ms var(--ease-out) 360ms forwards;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 600; padding: 13px 26px;
+      border-radius: 11px; border: none; cursor: pointer;
+      text-decoration: none; letter-spacing: -0.01em;
+      transition: transform 160ms var(--ease-out), background 180ms ease, box-shadow 200ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent); color: white;
+      box-shadow: 0 0 0 0 var(--accent-glow);
+    }
+    .btn-primary:hover { background: #6b7af5; box-shadow: 0 8px 32px var(--accent-glow); }
+
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border2);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+
+    /* ── Sidebar demo ── */
+    .demo-wrap {
+      margin: 72px auto 0; max-width: 700px;
+      opacity: 0; transform: translateY(28px) scale(0.97);
+      animation: fadeUp 700ms var(--ease-out) 500ms forwards;
+    }
+
+    .demo-window {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .demo-bar {
+      display: flex; align-items: center; gap: 7px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .mac-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mac-dot-r { background: #ff5f57; }
+    .mac-dot-y { background: #febc2e; }
+    .mac-dot-g { background: #28c840; }
+    .demo-bar-url {
+      margin-left: auto; font-size: 11px; color: var(--muted); letter-spacing: 0.01em;
+    }
+
+    .demo-split {
+      display: grid; grid-template-columns: 1fr 260px;
+      min-height: 260px;
+    }
+
+    .demo-editor {
+      padding: 16px 18px; border-right: 1px solid var(--border);
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11.5px;
+      color: rgba(200,210,255,0.35); line-height: 1.7;
+    }
+    .demo-editor .hl { color: rgba(200,210,255,0.75); }
+    .demo-editor .line-num { color: rgba(200,210,255,0.18); margin-right: 12px; user-select: none; }
+
+    .demo-sidebar {
+      display: flex; flex-direction: column;
+      border-left: 2px solid var(--accent);
+    }
+
+    .demo-sb-header {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .demo-sb-title { flex: 1; font-weight: 600; color: var(--accent-light); font-size: 11px; }
+    .demo-lang-tag {
+      font-size: 9px; font-weight: 700; padding: 2px 6px;
+      border-radius: 4px; background: var(--accent); color: white;
+    }
+
+    .demo-sb-progress {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-bottom: 1px solid var(--border);
+    }
+    .demo-prog-track {
+      flex: 1; height: 4px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden;
+    }
+    .demo-prog-fill {
+      height: 100%; width: 100%; background: var(--accent); border-radius: 3px;
+      transform: scaleX(0); transform-origin: left;
+      animation: progGrow 2s var(--ease-out) 1.2s both;
+    }
+    @keyframes progGrow { from { transform: scaleX(0); } to { transform: scaleX(0.6); } }
+    .demo-prog-pct { font-size: 10px; font-weight: 700; color: var(--accent-light); }
+
+    .demo-sb-body { padding: 6px 0; flex: 1; }
+
+    .demo-row {
+      display: grid; grid-template-columns: 24px 1fr;
+      gap: 0 5px; padding: 5px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .demo-row.active { background: rgba(91,106,240,0.14); border-left: 2px solid var(--accent); }
+    .demo-row-num { font-size: 9px; color: rgba(200,210,255,0.25); font-family: monospace; text-align: right; align-self: center; }
+    .demo-row-code { font-size: 9.5px; color: rgba(200,210,255,0.35); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .demo-row-zh { font-size: 10.5px; color: var(--text); margin-top: 2px; line-height: 1.45; }
+
+    .demo-row-detail {
+      grid-column: 1/-1; margin-top: 4px; padding: 7px 9px;
+      background: rgba(255,255,255,0.05); border-radius: 6px;
+      font-size: 10.5px; color: #e8eaff; line-height: 1.5;
+    }
+
+    /* ── Section ── */
+    .section { padding: 96px 0; }
+
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--accent-light); margin-bottom: 10px;
+    }
+    .section-h {
+      font-size: clamp(26px, 4vw, 38px); font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.12; margin-bottom: 14px;
+    }
+    .section-p { font-size: 16px; color: var(--muted); max-width: 440px; line-height: 1.7; }
+
+    /* ── Feature grid ── */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; margin-top: 48px;
+    }
+
+    .feat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 13px; padding: 22px;
+      opacity: 0; transform: translateY(16px) scale(0.97);
+      transition: opacity 480ms var(--ease-out), transform 480ms var(--ease-out), border-color 200ms ease;
+    }
+    .feat-card.vis {
+      opacity: 1; transform: none;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .feat-card.vis:hover {
+        border-color: var(--border2);
+        transform: translateY(-2px);
+      }
+    }
+
+    .feat-icon { font-size: 22px; margin-bottom: 14px; }
+    .feat-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 5px; }
+    .feat-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* ── Steps ── */
+    .steps-section { padding: 96px 0; background: linear-gradient(to bottom, transparent, rgba(91,106,240,0.04), transparent); }
+
+    .steps { margin-top: 48px; display: flex; flex-direction: column; }
+
+    .step {
+      display: flex; gap: 20px; padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0; transform: translateX(-16px);
+      transition: opacity 480ms var(--ease-out), transform 480ms var(--ease-out);
+    }
+    .step:last-child { border-bottom: none; }
+    .step.vis { opacity: 1; transform: none; }
+
+    .step-num {
+      width: 34px; height: 34px; border-radius: 9px;
+      border: 1px solid rgba(91,106,240,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: var(--accent-light);
+      flex-shrink: 0; margin-top: 2px;
+    }
+
+    .step h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
+    .step p { font-size: 13.5px; color: var(--muted); line-height: 1.65; }
+
+    /* ── Code block with copy button ── */
+    .code-wrap {
+      position: relative; margin-top: 12px;
+    }
+    .code-block {
+      display: block;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 44px 10px 14px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px; color: #6ee7b7; letter-spacing: 0; width: 100%;
+    }
+    .copy-btn {
+      position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border2);
+      border-radius: 5px; color: var(--muted); font-size: 10px; font-weight: 600;
+      padding: 3px 8px; cursor: pointer; letter-spacing: 0.02em;
+      transition: background 150ms ease, color 150ms ease, transform 160ms var(--ease-out);
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .copy-btn:active { transform: translateY(-50%) scale(0.95); }
+    .copy-btn.copied { color: #6ee7b7; border-color: rgba(110,231,183,0.3); background: rgba(110,231,183,0.08); }
+
+    /* ── CTA ── */
+    .cta-section { padding: 96px 0 140px; text-align: center; }
+
+    .cta-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 72px 40px 64px; position: relative; overflow: hidden;
+    }
+
+    /* glow orb */
+    .cta-card::before {
+      content: ''; position: absolute; top: -120px; left: 50%;
+      transform: translateX(-50%); width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(91,106,240,0.18) 0%, rgba(138,110,240,0.08) 40%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* grid lines overlay */
+    .cta-card::after {
+      content: ''; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(91,106,240,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91,106,240,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 20%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 20%, transparent 80%);
+      pointer-events: none;
+    }
+
+    .cta-inner { position: relative; z-index: 1; }
+
+    .cta-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: #f59e0b;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25);
+      padding: 4px 12px; border-radius: 100px; margin-bottom: 20px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .cta-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+
+    .cta-card h2 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .cta-card p  { font-size: 15px; color: var(--muted); margin-bottom: 32px; max-width: 380px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+
+    .cta-meta {
+      margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;
+    }
+    .cta-meta-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--muted);
+    }
+    .cta-meta-icon { font-size: 14px; }
+
+    /* floating orbs decoration */
+    .cta-orbs {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+    }
+    .cta-orb {
+      position: absolute; border-radius: 50%;
+      background: radial-gradient(circle, rgba(91,106,240,0.25), transparent 70%);
+      filter: blur(1px);
+    }
+    .cta-orb-1 { width: 120px; height: 120px; top: -30px; left: 8%; opacity: 0.5; }
+    .cta-orb-2 { width: 80px;  height: 80px;  bottom: 20px; right: 10%; opacity: 0.4; background: radial-gradient(circle, rgba(138,110,240,0.3), transparent 70%); }
+    .cta-orb-3 { width: 50px;  height: 50px;  top: 40px; right: 20%; opacity: 0.35; }
+
+    /* ── Footer ── */
+    footer {
+      padding: 28px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-left { font-size: 12px; color: var(--muted); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      font-size: 10px; font-weight: 600; padding: 3px 9px;
+      border-radius: 100px; border: 1px solid var(--border);
+      color: var(--muted); display: flex; align-items: center; gap: 5px;
+    }
+    .chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0; transform: translateY(32px);
+      transition: opacity 650ms var(--ease-out), transform 650ms var(--ease-out);
+    }
+    .reveal.vis { opacity: 1; transform: none; }
+
+    /* Section header children stagger */
+    .reveal-group .eyebrow  { opacity: 0; transform: translateY(20px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); }
+    .reveal-group .section-h { opacity: 0; transform: translateY(24px); transition: opacity 600ms var(--ease-out) 80ms, transform 600ms var(--ease-out) 80ms; }
+    .reveal-group .section-p { opacity: 0; transform: translateY(20px); transition: opacity 550ms var(--ease-out) 160ms, transform 550ms var(--ease-out) 160ms; }
+    .reveal-group.vis .eyebrow,
+    .reveal-group.vis .section-h,
+    .reveal-group.vis .section-p { opacity: 1; transform: none; }
+
+    /* ── Keyframes ── */
+    @keyframes fadeUp { to { opacity: 1; transform: none; } }
+    @keyframes fadeRight { to { opacity: 1; transform: none; } }
+
+    /* ── Mobile demo (before/after cards) ── */
+    .demo-mobile {
+      display: none;
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .demo-mobile-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+    }
+    .demo-mobile-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .demo-mobile-label.before { color: var(--muted); }
+    .demo-mobile-label.after  { color: var(--accent-light); }
+    .demo-mobile-code {
+      font-family: 'SF Mono', monospace; font-size: 11px;
+      color: rgba(200,210,255,0.45); line-height: 1.65;
+    }
+    .demo-mobile-zh {
+      font-size: 14px; color: var(--text); line-height: 1.6;
+    }
+    .demo-mobile-arrow {
+      text-align: center; font-size: 18px; color: var(--accent); margin: 0;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      .hero { padding: 100px 0 40px; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .btn { justify-content: center; }
+      .demo-wrap { display: none; }
+      .demo-mobile { display: flex; margin-top: 28px; }
+      .section { padding: 60px 0; }
+      .steps-section { padding: 60px 0; }
+      .cta-section { padding: 60px 0 80px; }
+      .cta-card { padding: 40px 24px; }
+      .cta-meta { gap: 12px; }
+      footer { flex-direction: column; }
+    }
+    @media (min-width: 641px) {
+      .demo-mobile { display: none; }        /* always hidden on desktop */
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="nav-icon">
+      <svg width="26" height="19" viewBox="0 0 26 19" fill="none">
+        <defs>
+          <linearGradient id="vtg" x1="0" y1="0" x2="26" y2="19" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#7b8af8"/>
+            <stop offset="100%" stop-color="#a07af5"/>
+          </linearGradient>
+        </defs>
+        <!-- VT ligature: V's right arm continues into T's crossbar -->
+        <path d="M2 2 L8 17 L14 2 L24 2 M19 2 L19 17"
+              stroke="url(#vtg)" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Vibe Translator
+    <span class="nav-version">v3.0.1</span>
+    <span class="nav-beta">Beta</span>
+  </div>
+  <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-pill" data-i18n="hero-pill">Chrome Extension · 完全免費 · 資料不離開電腦 · Beta</div>
+
+    <h1 class="hero-title" data-i18n-html="hero-h1">
+      讀懂每一行<br>
+      <span class="grad">AI 寫的程式碼</span>
+    </h1>
+
+    <p class="hero-sub" data-i18n="hero-sub">
+      Vibe Translator 在 Google AI Studio 側邊欄即時逐行翻譯程式碼，把技術語言變成你看得懂的白話文。不需要任何程式基礎。
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="vibe-translator-v3.0.1.zip" download>
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4.5 7l3.5 3.5L11.5 7M2 13h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="btn-download">下載擴充功能</span>
+      </a>
+      <a class="btn btn-ghost" href="#how" data-i18n="btn-features">看看功能 ↓</a>
+    </div>
+
+    <!-- Mobile before/after demo -->
+    <div class="demo-mobile">
+      <div class="demo-mobile-card">
+        <div class="demo-mobile-label before" data-i18n="demo-label-before">AI 輸出</div>
+        <div class="demo-mobile-code">The async function initiates a fetch request, awaiting Promise resolution before destructuring the response...</div>
+      </div>
+      <div class="demo-mobile-arrow">↓ Vibe Translator</div>
+      <div class="demo-mobile-card" style="border-color: rgba(91,106,240,0.3); background: rgba(91,106,240,0.06);">
+        <div class="demo-mobile-label after" data-i18n="demo-label-after">✦ 白話翻譯</div>
+        <div class="demo-mobile-zh" data-i18n="demo-zh">這段程式碼向網路發出請求，等資料回來後取出需要的部分，然後更新畫面上顯示的內容。</div>
+      </div>
+    </div>
+
+    <!-- Sidebar demo (desktop) -->
+    <div class="demo-wrap">
+      <div class="demo-window">
+        <div class="demo-bar">
+          <div class="mac-dot mac-dot-r"></div>
+          <div class="mac-dot mac-dot-y"></div>
+          <div class="mac-dot mac-dot-g"></div>
+          <span class="demo-bar-url">aistudio.google.com · Vibe Translator 側邊欄</span>
+        </div>
+        <div class="demo-split">
+          <!-- Editor -->
+          <div class="demo-editor">
+            <div><span class="line-num">1</span><span class="hl">async function</span> fetchData(url) {</div>
+            <div><span class="line-num">2</span>  <span class="hl">const</span> res = <span class="hl">await</span> fetch(url);</div>
+            <div><span class="line-num">3</span>  <span class="hl">const</span> { data } = <span class="hl">await</span> res.json();</div>
+            <div><span class="line-num">4</span>  setState(data);</div>
+            <div><span class="line-num">5</span>}</div>
+            <br>
+            <div><span class="line-num">6</span><span class="hl">useEffect</span>(() => {</div>
+            <div><span class="line-num">7</span>  fetchData(<span class="hl">'/api/user'</span>);</div>
+            <div><span class="line-num">8</span>}, []);</div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="demo-sidebar">
+            <div class="demo-sb-header">
+              <span class="demo-sb-title">💻 逐行解釋</span>
+              <span class="demo-lang-tag">中文</span>
+            </div>
+            <div class="demo-sb-progress">
+              <div class="demo-prog-track"><div class="demo-prog-fill"></div></div>
+              <span class="demo-prog-pct">60%</span>
+            </div>
+            <div class="demo-sb-body">
+              <div class="demo-row">
+                <span class="demo-row-num">1</span>
+                <div>
+                  <div class="demo-row-code">async function fetchData</div>
+                  <div class="demo-row-zh">定義一個會去網路拿資料的功能</div>
+                </div>
+              </div>
+              <div class="demo-row">
+                <span class="demo-row-num">2</span>
+                <div>
+                  <div class="demo-row-code">const res = await fetch</div>
+                  <div class="demo-row-zh">向指定的網址發出請求，等待回應</div>
+                </div>
+              </div>
+              <div class="demo-row active">
+                <span class="demo-row-num">3</span>
+                <div>
+                  <div class="demo-row-code">const { data } = await res.json()</div>
+                  <div class="demo-row-zh">把回傳的 JSON 資料取出 data 欄位</div>
+                  <div class="demo-row-detail">就像打開一個包裹，只拿出你需要的那個東西（data），其他都不管。</div>
+                </div>
+              </div>
+              <div class="demo-row">
+                <span class="demo-row-num">6</span>
+                <div>
+                  <div class="demo-row-code">useEffect(() => {</div>
+                  <div class="demo-row-zh">網頁一載入就自動執行</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="reveal-group">
+      <div class="eyebrow" data-i18n="feat-eyebrow">功能介紹</div>
+      <h2 class="section-h" data-i18n-html="feat-h2">不只翻譯，<br>還幫你真正理解</h2>
+      <p class="section-p" data-i18n="feat-p">從逐行解釋到自動生成簡報，Vibe Translator 是你 vibe coding 的最佳夥伴。</p>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📖</div>
+        <div class="feat-name" data-i18n="feat-1-name">逐行即時翻譯</div>
+        <div class="feat-desc" data-i18n="feat-1-desc">側邊欄同步顯示每一行程式碼的白話解釋，點擊還能看更詳細說明。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌐</div>
+        <div class="feat-name" data-i18n="feat-2-name">中英文切換</div>
+        <div class="feat-desc" data-i18n="feat-2-desc">一鍵切換繁體中文或 English 翻譯，適合不同語言背景的使用者。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-name" data-i18n="feat-3-name">智慧搜尋</div>
+        <div class="feat-desc" data-i18n="feat-3-desc">搜尋翻譯內容，或直接輸入行號快速跳至任何一行程式碼。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-name" data-i18n="feat-4-name">一鍵生成簡報</div>
+        <div class="feat-desc" data-i18n="feat-4-desc">把你瀏覽過的程式碼自動整理成 Reveal.js 互動簡報，並可下載為 PPTX。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <div class="feat-name" data-i18n="feat-5-name">翻譯進度追蹤</div>
+        <div class="feat-desc" data-i18n="feat-5-desc">進度條顯示已翻譯比例，清楚看到每個檔案的翻譯狀態。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-name" data-i18n="feat-6-name">完全本地運行</div>
+        <div class="feat-desc" data-i18n="feat-6-desc">使用 Ollama 在你的電腦跑 AI，資料不離開電腦，零費用。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- Steps -->
+<section class="steps-section" id="install">
+  <div class="container">
+    <div class="reveal-group">
+      <div class="eyebrow" data-i18n="steps-eyebrow">安裝教學</div>
+      <h2 class="section-h" data-i18n-html="steps-h2">一個指令，<br>五分鐘完成安裝</h2>
+      <p class="section-p" data-i18n="steps-p">我們準備了自動安裝腳本，幫你搞定所有設定，包括開機自動啟動。</p>
+    </div>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3 data-i18n="step-1-h3">下載 Vibe Translator</h3>
+          <p data-i18n="step-1-p">點下方按鈕下載壓縮檔，解壓縮到任意資料夾。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3 data-i18n="step-2-h3">執行自動安裝腳本</h3>
+          <p data-i18n="step-2-p">點下方按鈕下載 install.sh，下載後直接拖入 Terminal 視窗，按 Enter。腳本會自動安裝 Ollama、下載 AI 模型、並設定開機自動啟動。</p>
+          <a class="btn btn-ghost" href="install.sh" download style="margin-top:12px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4.5 7l3.5 3.5L11.5 7M2 13h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-i18n="btn-install-sh">下載 install.sh</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3 data-i18n="step-3-h3">在 Chrome 載入擴充功能</h3>
+          <p data-i18n-html="step-3-p">打開 Chrome，在網址列輸入 <strong style="color:var(--text)">chrome://extensions</strong>，開啟右上角「開發人員模式」，點「載入未封裝項目」，選擇解壓縮後的資料夾。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3 data-i18n="step-4-h3">前往 AI Studio 開始使用</h3>
+          <p data-i18n-html="step-4-p">打開 <strong style="color:var(--text)">aistudio.google.com</strong>，右側會出現 Vibe Translator 側邊欄，開始瀏覽程式碼，翻譯就會自動出現。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-card sr">
+      <!-- Decorative orbs -->
+      <div class="cta-orbs">
+        <div class="cta-orb cta-orb-1"></div>
+        <div class="cta-orb cta-orb-2"></div>
+        <div class="cta-orb cta-orb-3"></div>
+      </div>
+
+      <div class="cta-inner">
+        <div class="cta-badge" data-i18n="cta-badge">Beta · 公開測試中</div>
+        <h2 data-i18n="cta-h2">準備好了嗎？</h2>
+        <p data-i18n="cta-p">免費下載，從此讀懂每一行 AI 寫的程式碼。完全本地運行，資料不離開你的電腦。</p>
+        <a class="btn btn-primary" href="vibe-translator-v3.0.1.zip" download>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4.5 7l3.5 3.5L11.5 7M2 13h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="btn-cta">下載 Vibe Translator v3.0.1</span>
+        </a>
+        <div class="cta-meta">
+          <div class="cta-meta-item"><span class="cta-meta-icon">🔒</span> <span data-i18n="cta-meta-1">資料不離開電腦</span></div>
+          <div class="cta-meta-item"><span class="cta-meta-icon">💸</span> <span data-i18n="cta-meta-2">完全免費</span></div>
+          <div class="cta-meta-item"><span class="cta-meta-icon">⚡</span> <span data-i18n="cta-meta-3">一鍵安裝</span></div>
+          <div class="cta-meta-item"><span class="cta-meta-icon">🌐</span> <span data-i18n="cta-meta-4">中英文支援</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span class="footer-left" data-i18n="footer">Vibe Translator v3.0.1 · Ollama + Gemma3 · 完全免費開源</span>
+  <div class="chips">
+    <div class="chip"><div class="chip-dot" style="background:#5b6af0"></div><span data-i18n="chip-1">逐行解釋</span></div>
+    <div class="chip"><div class="chip-dot" style="background:#1a9b74"></div><span data-i18n="chip-2">中英切換</span></div>
+    <div class="chip"><div class="chip-dot" style="background:#8a6ef0"></div><span data-i18n="chip-3">生成簡報</span></div>
+    <div class="chip"><div class="chip-dot" style="background:#d94f4f"></div><span data-i18n="chip-4">本地 AI</span></div>
+  </div>
+</footer>
+
+<script>
+  // ── i18n ────────────────────────────────────────────────────
+  const T = {
+    zh: {
+      'hero-pill': 'Chrome Extension · 完全免費 · 資料不離開電腦 · Beta',
+      'hero-h1': '讀懂每一行<br><span class="grad">AI 寫的程式碼</span>',
+      'hero-sub': 'Vibe Translator 在 Google AI Studio 側邊欄即時逐行翻譯程式碼，把技術語言變成你看得懂的白話文。不需要任何程式基礎。',
+      'btn-download': '下載擴充功能',
+      'btn-features': '看看功能 ↓',
+      'demo-label-before': 'AI 輸出',
+      'demo-label-after': '✦ 白話翻譯',
+      'demo-zh': '這段程式碼向網路發出請求，等資料回來後取出需要的部分，然後更新畫面上顯示的內容。',
+      'feat-eyebrow': '功能介紹',
+      'feat-h2': '不只翻譯，<br>還幫你真正理解',
+      'feat-p': '從逐行解釋到自動生成簡報，Vibe Translator 是你 vibe coding 的最佳夥伴。',
+      'feat-1-name': '逐行即時翻譯', 'feat-1-desc': '側邊欄同步顯示每一行程式碼的白話解釋，點擊還能看更詳細說明。',
+      'feat-2-name': '中英文切換',   'feat-2-desc': '一鍵切換繁體中文或 English 翻譯，適合不同語言背景的使用者。',
+      'feat-3-name': '智慧搜尋',     'feat-3-desc': '搜尋翻譯內容，或直接輸入行號快速跳至任何一行程式碼。',
+      'feat-4-name': '一鍵生成簡報', 'feat-4-desc': '把你瀏覽過的程式碼自動整理成 Reveal.js 互動簡報，並可下載為 PPTX。',
+      'feat-5-name': '翻譯進度追蹤', 'feat-5-desc': '進度條顯示已翻譯比例，清楚看到每個檔案的翻譯狀態。',
+      'feat-6-name': '完全本地運行', 'feat-6-desc': '使用 Ollama 在你的電腦跑 AI，資料不離開電腦，零費用。',
+      'steps-eyebrow': '安裝教學',
+      'steps-h2': '一個指令，<br>五分鐘完成安裝',
+      'steps-p': '我們準備了自動安裝腳本，幫你搞定所有設定，包括開機自動啟動。',
+      'step-1-h3': '下載 Vibe Translator',
+      'step-1-p': '點下方按鈕下載壓縮檔，解壓縮到任意資料夾。',
+      'step-2-h3': '執行自動安裝腳本',
+      'step-2-p': '點下方按鈕下載 install.sh，下載後直接拖入 Terminal 視窗，按 Enter。腳本會自動安裝 Ollama、下載 AI 模型、並設定開機自動啟動。',
+      'btn-install-sh': '下載 install.sh',
+      'copy-btn': '複製', 'copy-done': '✓ 已複製',
+      'step-3-h3': '在 Chrome 載入擴充功能',
+      'step-3-p': '打開 Chrome，在網址列輸入 <strong style="color:var(--text)">chrome://extensions</strong>，開啟右上角「開發人員模式」，點「載入未封裝項目」，選擇解壓縮後的資料夾。',
+      'step-4-h3': '前往 AI Studio 開始使用',
+      'step-4-p': '打開 <strong style="color:var(--text)">aistudio.google.com</strong>，右側會出現 Vibe Translator 側邊欄，開始瀏覽程式碼，翻譯就會自動出現。',
+      'cta-badge': 'Beta · 公開測試中',
+      'cta-h2': '準備好了嗎？',
+      'cta-p': '免費下載，從此讀懂每一行 AI 寫的程式碼。完全本地運行，資料不離開你的電腦。',
+      'btn-cta': '下載 Vibe Translator v3.0.1',
+      'cta-meta-1': '資料不離開電腦', 'cta-meta-2': '完全免費', 'cta-meta-3': '一鍵安裝', 'cta-meta-4': '中英文支援',
+      'footer': 'Vibe Translator v3.0.1 · Ollama + Gemma3 · 完全免費開源',
+      'chip-1': '逐行解釋', 'chip-2': '中英切換', 'chip-3': '生成簡報', 'chip-4': '本地 AI',
+      'lang-btn': 'EN',
+    },
+    en: {
+      'hero-pill': 'Chrome Extension · Free · Data stays on your device · Beta',
+      'hero-h1': 'Understand every line<br><span class="grad">AI writes in code</span>',
+      'hero-sub': 'Vibe Translator translates code line-by-line in real time inside Google AI Studio, turning technical jargon into plain language. No coding experience needed.',
+      'btn-download': 'Download Extension',
+      'btn-features': 'See Features ↓',
+      'demo-label-before': 'AI Output',
+      'demo-label-after': '✦ Translation',
+      'demo-zh': 'This code sends a request to the internet, waits for the data to return, extracts the part it needs, then updates what\'s shown on screen.',
+      'feat-eyebrow': 'Features',
+      'feat-h2': 'More than translation,<br>true understanding',
+      'feat-p': 'From line-by-line explanations to auto-generated slides, Vibe Translator is your ultimate vibe coding companion.',
+      'feat-1-name': 'Real-time Translation', 'feat-1-desc': 'The sidebar syncs with every line of code, showing plain-language explanations. Click any line for deeper detail.',
+      'feat-2-name': 'Language Toggle',       'feat-2-desc': 'Switch between Traditional Chinese and English with one click — built for all backgrounds.',
+      'feat-3-name': 'Smart Search',          'feat-3-desc': 'Search across translations, or jump to any line by typing its line number.',
+      'feat-4-name': 'One-click Slides',      'feat-4-desc': 'Automatically turn browsed code into a Reveal.js interactive presentation, exportable as PPTX.',
+      'feat-5-name': 'Progress Tracking',     'feat-5-desc': 'A progress bar shows how much has been translated so you always know the status of each file.',
+      'feat-6-name': 'Fully Local AI',        'feat-6-desc': 'Uses Ollama to run AI on your machine — data never leaves your computer, completely free.',
+      'steps-eyebrow': 'Installation',
+      'steps-h2': 'One command,<br>ready in 5 minutes',
+      'steps-p': 'Our automated script handles everything — Ollama, the AI model, and auto-start on boot.',
+      'step-1-h3': 'Download Vibe Translator',
+      'step-1-p': 'Click the button below to download the zip file, then extract it to any folder.',
+      'step-2-h3': 'Run the Install Script',
+      'step-2-p': 'Click the button below to download install.sh, then drag it into your Terminal window and press Enter. It will install Ollama, download the AI model, and configure auto-start.',
+      'btn-install-sh': 'Download install.sh',
+      'copy-btn': 'Copy', 'copy-done': '✓ Copied',
+      'step-3-h3': 'Load the Extension in Chrome',
+      'step-3-p': 'Open Chrome, go to <strong style="color:var(--text)">chrome://extensions</strong>, enable "Developer mode" in the top right, click "Load unpacked", and select the extracted folder.',
+      'step-4-h3': 'Open AI Studio',
+      'step-4-p': 'Visit <strong style="color:var(--text)">aistudio.google.com</strong> — the Vibe Translator sidebar will appear on the right. Browse any code and translations appear automatically.',
+      'cta-badge': 'Beta · Now Available',
+      'cta-h2': 'Ready to get started?',
+      'cta-p': 'Download for free and finally understand every line AI writes. Fully local — your data never leaves your computer.',
+      'btn-cta': 'Download Vibe Translator v3.0.1',
+      'cta-meta-1': 'Data stays local', 'cta-meta-2': 'Completely free', 'cta-meta-3': 'One-click install', 'cta-meta-4': 'Bilingual',
+      'footer': 'Vibe Translator v3.0.1 · Ollama + Gemma3 · Free & Open Source',
+      'chip-1': 'Line-by-line', 'chip-2': 'Bilingual', 'chip-3': 'Slide Export', 'chip-4': 'Local AI',
+      'lang-btn': '中文',
+    }
+  };
+
+  const HTML_KEYS = new Set(['hero-h1','feat-h2','steps-h2','step-3-p','step-4-p']);
+  let currentLang = 'zh';
+
+  function applyLang(lang) {
+    const dict = T[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const v = dict[el.dataset.i18n];
+      if (v !== undefined) el.textContent = v;
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const v = dict[el.dataset.i18nHtml];
+      if (v !== undefined) el.innerHTML = v;
+    });
+    document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+    document.getElementById('langBtn').textContent = dict['lang-btn'];
+    currentLang = lang;
+  }
+
+  function toggleLang() {
+    applyLang(currentLang === 'zh' ? 'en' : 'zh');
+  }
+
+  // Auto-detect browser language
+  const browserLang = (navigator.language || navigator.userLanguage || 'zh').toLowerCase();
+  const initLang = browserLang.startsWith('zh') ? 'zh' : 'en';
+  applyLang(initLang);
+
+  // ── Copy to clipboard ────────────────────────────────────────
+  function copyCode(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const done = T[currentLang]['copy-done'];
+      const orig = T[currentLang]['copy-btn'];
+      btn.textContent = done;
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ── Scroll reveal ────────────────────────────────────────────
+  const nav = document.getElementById('nav');
+  const allCards = [...document.querySelectorAll('.feat-card')];
+  const allSteps = [...document.querySelectorAll('.step')];
+
+  function reveal() {
+    const vh = window.innerHeight;
+    nav.classList.toggle('scrolled', scrollY > 40);
+    document.querySelectorAll('.reveal-group:not(.vis), .reveal:not(.vis)').forEach(el => {
+      if (el.getBoundingClientRect().top < vh - 60) el.classList.add('vis');
+    });
+    allCards.forEach(el => {
+      if (!el.classList.contains('vis') && el.getBoundingClientRect().top < vh - 40) {
+        el.style.transitionDelay = `${allCards.indexOf(el) * 55}ms`;
+        el.classList.add('vis');
+        el.addEventListener('transitionend', () => { el.style.transitionDelay = '0ms'; }, { once: true });
+      }
+    });
+    allSteps.forEach(el => {
+      if (!el.classList.contains('vis') && el.getBoundingClientRect().top < vh - 40) {
+        el.style.transitionDelay = `${allSteps.indexOf(el) * 70}ms`;
+        el.classList.add('vis');
+        el.addEventListener('transitionend', () => { el.style.transitionDelay = '0ms'; }, { once: true });
+      }
+    });
+  }
+
+  window.addEventListener('scroll', reveal, { passive: true });
+  reveal();
+</script>
+
+</body>
+</html>
